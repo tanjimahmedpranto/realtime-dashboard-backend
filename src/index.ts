@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -23,9 +23,10 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/", (_req, res) => {
+app.get("/", (_req: Request, res: Response) => {
   res.send("API is running");
 });
+
 
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);

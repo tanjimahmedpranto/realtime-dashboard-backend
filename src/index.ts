@@ -14,7 +14,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://my-frontend-domain.vercel.app", 
+      "https://realtime-dashboard-frontend.vercel.app" 
     ], 
     credentials: true
   })

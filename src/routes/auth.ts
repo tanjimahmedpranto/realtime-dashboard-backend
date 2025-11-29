@@ -33,11 +33,13 @@ router.post("/login", async (req: Request, res: Response) => {
 
   // IMPORTANT: cross-site cookie settings
   res.cookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isProduction,       // true on Render (https), false locally
-    sameSite: isProduction ? "none" : "lax", // "none" so cross-site requests can send cookie
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+  httpOnly: true,
+  secure: process.env.NODE_ENV !== "development",
+  sameSite: process.env.NODE_ENV !== "development" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/"
+});
+
 
   return res.json({ email });
 });
@@ -45,10 +47,12 @@ router.post("/login", async (req: Request, res: Response) => {
 // POST /auth/logout
 router.post("/logout", (_req: Request, res: Response) => {
   res.clearCookie(COOKIE_NAME, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax"
-  });
+  httpOnly: true,
+  secure: process.env.NODE_ENV !== "development",
+  sameSite: process.env.NODE_ENV !== "development" ? "none" : "lax",
+  path: "/"
+});
+
 
   return res.json({ success: true });
 });

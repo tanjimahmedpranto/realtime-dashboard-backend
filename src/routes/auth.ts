@@ -1,45 +1,34 @@
-// src/routes/auth.ts
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
 const COOKIE_NAME = process.env.COOKIE_NAME || "token";
 const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
-
-// small helper to know if we are in production on Render/Vercel
 const isProduction = process.env.NODE_ENV === "production";
 
 // POST /auth/login
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", (req: Request, res: Response) => {
   const { email, password } = req.body as {
     email: string;
     password: string;
   };
 
-  // Demo credentials – adjust if used other ones
-  const DEMO_EMAIL = "demo@example.com";
-  const DEMO_PASSWORD = "password123";
-
-  if (email !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
+  // Demo credentials
+  if (email !== "demo@example.com" || password !== "password123") {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  // create JWT payload 
   const token = jwt.sign({ email }, JWT_SECRET, {
-    expiresIn: "7d"
+    expiresIn: "7d",
   });
 
-  // IMPORTANT: cross-site cookie settings
   res.cookie(COOKIE_NAME, token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV !== "development",
-  sameSite: process.env.NODE_ENV !== "development" ? "none" : "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/"
-});
-
+    httpOnly: true,
+    secure: isProduction,          // true on Render
+    sameSite: isProduction ? "none" : "lax", // "none" for cross-site on Vercel
+    path: "/",
+  });
 
   return res.json({ email });
 });
@@ -47,28 +36,27 @@ router.post("/login", async (req: Request, res: Response) => {
 // POST /auth/logout
 router.post("/logout", (_req: Request, res: Response) => {
   res.clearCookie(COOKIE_NAME, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV !== "development",
-  sameSite: process.env.NODE_ENV !== "development" ? "none" : "lax",
-  path: "/"
-});
-
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
 
   return res.json({ success: true });
 });
 
-// GET /auth/me - simple check using cookie (can also use req.user if you like)
-router.get("/me", (req: AuthRequest, res: Response) => {
-  try {
-    const token = req.cookies?.[COOKIE_NAME];
-    if (!token) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+// GET /auth/me
+router.get("/me", (req: Request, res: Response) => {
+  const token = (req as any).cookies?.[COOKIE_NAME];
 
+  if (!token) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  try {
     const decoded = jwt.verify(token, JWT_SECRET) as { email: string };
     return res.json({ email: decoded.email });
-  } catch (err) {
-    console.error("Auth /me error:", err);
+  } catch {
     return res.status(401).json({ message: "Invalid token" });
   }
 });
